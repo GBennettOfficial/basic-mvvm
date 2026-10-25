@@ -18,12 +18,12 @@ namespace BasicMvvm
 
         /// <summary>Predicate on the value only.</summary>
         public PropertyRuleBuilder<TSelf, TProp> Must(Func<TProp, bool> predicate,
-                                              string message = "'{PropertyName}' is not valid.")
+                                              string message = "Input is not valid.")
             => Must((_, value) => predicate(value), message);
 
         /// <summary>Predicate with access to the whole view model (for cross-property rules).</summary>
         public PropertyRuleBuilder<TSelf, TProp> Must(Func<TSelf, TProp, bool> predicate,
-                                              string message = "'{PropertyName}' is not valid.")
+                                              string message = "Input is not valid.")
         {
             var rule = new PropertyRule<TSelf, TProp>(_propertyName, _getter, predicate, message);
             _chain.Add(rule);

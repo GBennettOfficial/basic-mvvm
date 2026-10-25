@@ -25,7 +25,7 @@
 
             return _predicate(instance, _getter(instance))
                 ? null
-                : Message.Replace("{PropertyName}", _propertyName);
+                : Message;
         }
     }
 }

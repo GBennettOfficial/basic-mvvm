@@ -14,7 +14,7 @@ namespace BasicMvvm
                 return "";
             return body is MemberExpression m
                 ? m.Member.Name
-                : throw new ArgumentException("Expression must be a property access, e.g. x => x.Name");
+                : throw new ArgumentException("Expression must be a property access or self reference, e.g. x => x.Name");
         }
     }
 }
