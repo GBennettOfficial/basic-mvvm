@@ -29,11 +29,22 @@ namespace BasicMvvm
                 : Enumerable.Empty<string>();
         }
 
-        // ---- Rule registration -------------------------------------------------
+        public bool CheckForErrors()
+        {
+            foreach (var name in _rules.Keys.ToList())
+                ValidateIsolatedProperty(name);
+            return !HasErrors;
+        }
 
+        public bool CheckForErrorsOnProperties(params string[] propertyNames)
+        {
+            foreach (var name in propertyNames)
+                ValidateIsolatedProperty(name);
+            return !HasErrors;
+        }
         protected PropertyRuleBuilder<TSelf, TProp> RuleFor<TProp>(Expression<Func<TSelf, TProp>> expression)
         {
-            var name = GetPropertyName(expression);
+            var name = SharedFuncs.GetPropertyNameFromFunc(expression);
             return new PropertyRuleBuilder<TSelf, TProp>(this, name, expression.Compile());
         }
 
@@ -41,54 +52,47 @@ namespace BasicMvvm
         {
             if (base.SetProperty(ref field, value, propertyName))
             {
-                ValidateProperty(propertyName);
+                ValidatePropertyAndDependencies(propertyName);
                 return true;
             }
             return false;
         }
 
-        internal void AddRule(string propertyName, IPropertyRule<TSelf> rule)
+        protected void SubscribeErrorsChanged(string propertyName, Action action)
+        {
+            ErrorsChanged += (sender, eventArgs) =>
+            {
+                if (eventArgs.PropertyName == propertyName)
+                {
+                    action();
+                }
+            };
+        }
+
+        internal void RegisterRule(string propertyName, IPropertyRule<TSelf> rule)
         {
             if (!_rules.TryGetValue(propertyName, out var list))
                 _rules[propertyName] = list = new List<IPropertyRule<TSelf>>();
             list.Add(rule);
         }
 
-        internal void AddDependency(string sourceProperty, string dependentProperty)
+        internal void RegisterDependency(string sourceProperty, string dependentProperty)
         {
             if (!_dependents.TryGetValue(sourceProperty, out var set))
                 _dependents[sourceProperty] = set = new HashSet<string>();
             set.Add(dependentProperty);
         }
 
-        internal static string GetPropertyName<TProp>(Expression<Func<TSelf, TProp>> expression)
+        private void ValidatePropertyAndDependencies(string propertyName)
         {
-            var body = expression.Body is UnaryExpression u ? u.Operand : expression.Body;
-            return body is MemberExpression m
-                ? m.Member.Name
-                : throw new ArgumentException("Expression must be a property access, e.g. x => x.Name");
-        }
-
-        // ---- Validation --------------------------------------------------------
-
-        private void ValidateProperty(string propertyName)
-        {
-            ValidateSingle(propertyName);
+            ValidateIsolatedProperty(propertyName);
 
             if (_dependents.TryGetValue(propertyName, out var dependents))
                 foreach (var dependent in dependents)
-                    ValidateSingle(dependent);
+                    ValidateIsolatedProperty(dependent);
         }
 
-        /// <summary>Validates every property with rules. Call this before saving.</summary>
-        public bool ValidateAll()
-        {
-            foreach (var name in _rules.Keys.ToList())
-                ValidateSingle(name);
-            return !HasErrors;
-        }
-
-        private void ValidateSingle(string propertyName)
+        private void ValidateIsolatedProperty(string propertyName)
         {
             if (!_rules.TryGetValue(propertyName, out var rules))
                 return;
@@ -111,17 +115,6 @@ namespace BasicMvvm
             {
                 ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
             }
-        }
-
-        protected void SubscribeErrorsChanged(string propertyName, Action action)
-        {
-            ErrorsChanged += (sender, eventArgs) =>
-            {
-                if (eventArgs.PropertyName == propertyName)
-                {
-                    action();
-                }
-            };
-        }
+        } 
     }
 }

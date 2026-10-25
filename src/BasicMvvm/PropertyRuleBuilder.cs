@@ -27,7 +27,7 @@ namespace BasicMvvm
         {
             var rule = new PropertyRule<TSelf, TProp>(_propertyName, _getter, predicate, message);
             _chain.Add(rule);
-            _owner.AddRule(_propertyName, rule);
+            _owner.RegisterRule(_propertyName, rule);
             return this;
         }
 
@@ -57,7 +57,7 @@ namespace BasicMvvm
         /// <summary>Re-validate this property whenever another property changes.</summary>
         public PropertyRuleBuilder<TSelf, TProp> DependsOn<TOther>(Expression<Func<TSelf, TOther>> other)
         {
-            _owner.AddDependency(UserInputBaseVm<TSelf>.GetPropertyName(other), _propertyName);
+            _owner.RegisterDependency(SharedFuncs.GetPropertyNameFromFunc(other), _propertyName);
             return this;
         }
     }
