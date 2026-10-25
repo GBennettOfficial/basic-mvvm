@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace BasicMvvm;
 
-public class BaseVm : INotifyPropertyChanging, INotifyPropertyChanged
+public abstract class BaseVm : INotifyPropertyChanging, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
